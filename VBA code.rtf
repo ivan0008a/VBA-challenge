@@ -1,0 +1,96 @@
+{\rtf1\ansi\ansicpg1252\cocoartf2761
+\cocoatextscaling0\cocoaplatform0{\fonttbl\f0\fswiss\fcharset0 Helvetica;}
+{\colortbl;\red255\green255\blue255;}
+{\*\expandedcolortbl;;}
+\margl1440\margr1440\vieww11520\viewh8400\viewkind0
+\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural\partightenfactor0
+
+\f0\fs24 \cf0 Sub QuarterlyStockSummaryAllSheets()\
+\
+    ' Declare variables\
+    Dim ws As Worksheet ' Represents worksheet in theworkbook during the loop\
+    Dim lastRow As Long, i As Long, outRow As Long 'LastRow Represents the last row of data in column ,outRow is where the output is starting\
+    Dim ticker As String, openPrice As Double, closePrice As Double, volume As Double\
+    Dim maxIncrease As Double, minDecrease As Double, maxVolume As Double\
+    Dim tickerIncrease As String, tickerDecrease As String, tickerVolume As String\
+    \
+    ' Loops through every worksheet in the active workbook\
+    For Each ws In ThisWorkbook.Worksheets\
+        ' Reset summary tracking variables for each worksheet\
+        maxIncrease = 0\
+        minDecrease = 0\
+        maxVolume = 0\
+        \
+        ' Initialize output\
+        With ws\
+            .Range("I1:L1").Value = Array("Ticker", "Quarterly Change", "Percent Change", "Total Volume")\
+            .Range("O1:Q1").Value = Array("Metric", "Ticker", "Value")\
+         End With\
+        \
+        ' Find last row of data in column A\
+        lastRow = ws.Cells(ws.Rows.Count, "A").End(xlUp).Row\
+        outRow = 2\
+        \
+        ' Initialize first ticker\
+        ticker = ws.Cells(2, 1).Value\
+        openPrice = ws.Cells(2, 3).Value\
+        volume = 0\
+        \
+        ' Loop through rows\
+        For i = 2 To lastRow\
+            volume = volume + ws.Cells(i, 7).Value ' Accumulate volume\
+            \
+            ' Check for ticker change or end of data\
+            If ws.Cells(i + 1, 1).Value <> ticker Or i = lastRow Then\
+                closePrice = ws.Cells(i, 6).Value\
+                \
+                ' Output result to table formated correctly\
+                ws.Cells(outRow, 9).Value = ticker ' Ticker\
+                ws.Cells(outRow, 10).Value = closePrice - openPrice ' Quarterly Change\
+                ws.Cells(outRow, 11).Value = Format((closePrice - openPrice) / openPrice, "0.00%") ' Percent Change\
+                ws.Cells(outRow, 12).Value = volume ' Total Volume\
+                \
+                ' Track max increase, decrease, and volume and display\
+                If (closePrice - openPrice) / openPrice > maxIncrease Then\
+                    maxIncrease = (closePrice - openPrice) / openPrice\
+                    tickerIncrease = ticker\
+                End If\
+                If (closePrice - openPrice) / openPrice < minDecrease Then\
+                    minDecrease = (closePrice - openPrice) / openPrice\
+                    tickerDecrease = ticker\
+                End If\
+                If volume > maxVolume Then\
+                    maxVolume = volume\
+                    tickerVolume = ticker\
+                End If\
+                \
+                ' Prepare next ticker\
+                outRow = outRow + 1\
+                If i < lastRow Then\
+                    ticker = ws.Cells(i + 1, 1).Value\
+                    openPrice = ws.Cells(i + 1, 3).Value\
+                    volume = 0\
+                End If\
+            End If\
+        Next i\
+        \
+        ' Output summary results\
+        With ws\
+            .Range("O2").Value = "Greatest % Increase"\
+            .Range("P2").Value = tickerIncrease\
+            .Range("Q2").Value = Format(maxIncrease, "0.00%")\
+            .Range("O3").Value = "Greatest % Decrease"\
+            .Range("P3").Value = tickerDecrease\
+            .Range("Q3").Value = Format(minDecrease, "0.00%")\
+            .Range("O4").Value = "Greatest Total Volume"\
+            .Range("P4").Value = tickerVolume\
+            .Range("Q4").Value = maxVolume\
+        End With\
+    \
+    Next ws\
+\
+    MsgBox "Stock Summary Complete on All Worksheets!", vbInformation, "Success"\
+\
+End Sub\
+\
+}
